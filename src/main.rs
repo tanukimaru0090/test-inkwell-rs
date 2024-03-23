@@ -18,21 +18,36 @@ fn write_ir_file(file_name:&str,module:&Module)->Result<(),Box<dyn std::error::E
     Ok(())     
 }
 fn main()->Result<(),Box<dyn std::error::Error>> {
+    
+
+    // メインモジュールの名前 
+    let module_name = "main";
     // llvmの初期化
     let context = Context::create();
-    let module = context.create_module("main.tanu");
+    let module = context.create_module(module_name);
     let builder = context.create_builder();
     // i32型の型定義
     let i32_type = context.i32_type();
     // void型の型定義
     let void_type = context.void_type();
-    // add関数の型定義
-    let add_func_type = i32_type.fn_type(&[i32_type.into(), i32_type.into()], false);
-    // main関数の型定義
+   // main関数の型定義
     let main_type = i32_type.fn_type(&[], false);
     // 構造体の型定義
     let struct_type = context.struct_type(&[i32_type.into(), i32_type.into()],false);
+    // add関数の型定義
+    let add_func_type = i32_type.fn_type(&[i32_type.into(), i32_type.into()], false);
+ 
+    // sub関数の型定義
+    let sub_func_type = i32_type.fn_type(&[i32_type.into(), i32_type.into()], false);
+    // sub関数の型定義
+    let mul_func_type = i32_type.fn_type(&[i32_type.into(), i32_type.into()], false);
+    
+     // sub関数の型定義
+    let div_func_type = i32_type.fn_type(&[i32_type.into(), i32_type.into()], false);
+    
 
+
+    
     // add関数の定義と処理
     let add_func = module.add_function("add", add_func_type, None);
     // add関数のベーシックブロックを作成
@@ -42,9 +57,46 @@ fn main()->Result<(),Box<dyn std::error::Error>> {
     let x = add_func.get_nth_param(0).unwrap().into_int_value();
     let y = add_func.get_nth_param(1).unwrap().into_int_value();
     // 結果を保存し、戻り値として返す
-    let sum = builder.build_int_add(x, y, "sumTemp")?;
-    builder.build_return(Some(&sum)).unwrap();
+    let add_sum = builder.build_int_add(x, y, "sumTemp")?;
+    builder.build_return(Some(&add_sum)).unwrap();
     
+    // sub関数の定義と処理
+    let sub_func = module.add_function("sub", sub_func_type, None);
+    // sub関数のベーシックブロックを作成
+    let sub_entry = context.append_basic_block(sub_func, "entry");
+    builder.position_at_end(sub_entry);
+    // 仮引数２つを取得
+    let x = sub_func.get_nth_param(0).unwrap().into_int_value();
+    let y = sub_func.get_nth_param(1).unwrap().into_int_value();
+    // 結果を保存し、戻り値として返す
+    let sub_sum = builder.build_int_sub(x, y, "sumTemp")?;
+    builder.build_return(Some(&sub_sum)).unwrap();
+    
+    // mul関数の定義と処理
+    let mul_func = module.add_function("mul", mul_func_type, None);
+    // mul関数のベーシックブロックを作成
+    let mul_entry = context.append_basic_block(mul_func, "entry");
+    builder.position_at_end(mul_entry);
+    // 仮引数２つを取得
+    let x = mul_func.get_nth_param(0).unwrap().into_int_value();
+    let y = mul_func.get_nth_param(1).unwrap().into_int_value();
+    // 結果を保存し、戻り値として返す
+    let mul_sum = builder.build_int_mul(x, y, "sumTemp")?;
+    builder.build_return(Some(&mul_sum)).unwrap();
+
+    // div関数の定義と処理
+    let div_func = module.add_function("div", div_func_type, None);
+    // div関数のベーシックブロックを作成
+    let div_entry = context.append_basic_block(div_func, "entry");
+    builder.position_at_end(div_entry);
+    // 仮引数２つを取得
+    let x = div_func.get_nth_param(0).unwrap().into_int_value();
+    let y = div_func.get_nth_param(1).unwrap().into_int_value();
+    // 結果を保存し、戻り値として返す
+    let div_sum = builder.build_int_signed_div(x, y, "sumTemp")?;
+    builder.build_return(Some(&div_sum)).unwrap();
+
+
 
     // 構造体を定義 
     let g_struct = module.add_global(struct_type, Some(AddressSpace::default()), "myStruct");
@@ -58,8 +110,8 @@ fn main()->Result<(),Box<dyn std::error::Error>> {
     // main関数のベーシックブロックを作成
     let main_entry = context.append_basic_block(main_func, "entry");
     builder.position_at_end(main_entry);
-    let add_args = [i32_type.const_int(50, false).into(),i32_type.const_int(100, false).into()];
-    let add_res = builder.build_call(add_func, add_args.as_slice(), "addTemp").unwrap().try_as_basic_value().left().unwrap();
+    let add_args = [i32_type.const_int(10, false).into(),i32_type.const_int(5, false).into()];
+    let add_res = builder.build_call(sub_func, add_args.as_slice(), "addTemp").unwrap().try_as_basic_value().left().unwrap();
     builder.build_return(Some(&add_res))?;
     
 
