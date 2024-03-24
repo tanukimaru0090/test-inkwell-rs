@@ -17,5 +17,8 @@ ir_file_name=${ir_path%.*}
 
 # コンパイル
 cargo run
+# オブジェクトファイルに変換
 llc -relocation-model=pic -filetype=obj "${ir_path}"
-g++ "${ir_file_name}.o" -o "${ext_path}" -pie
+# オブジェクトファイルをリンクして実行可能ファイルを生成
+#g++ "${ir_file_name}.o" -o  "${ext_path}" -pie
+g++  "${ir_file_name}.o" "libmusic_play.a" "libears.so" "-lopenal" "-lsndfile" -o  "${ext_path}" -pie

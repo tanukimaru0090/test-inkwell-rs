@@ -44,6 +44,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // sub関数の型定義
     let div_func_type = i32_type.fn_type(&[i32_type.into(), i32_type.into()], false);
+    
 
     // printf関数の型定義
     let printf_type = i32_type.fn_type(&[i8_type.ptr_type(AddressSpace::default()).into()], true);
@@ -66,6 +67,29 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     );
     global_format_str.set_constant(true);
     global_format_str.set_linkage(iw::module::Linkage::Private);
+
+    // music_play関数の型定義
+    let music_play_type = i32_type.fn_type(&[i8_type.ptr_type(AddressSpace::default()).into()], false);
+    // music_play関数の関数定義
+    let music_play_func = module.add_function("music_play",music_play_type,None);
+
+    let music_path_str = "/home/tanukimaru/th-music/foru.wav";
+    let global_music_path_str = module.add_global(
+        i8_type.array_type(music_path_str.len() as u32),
+        Some(AddressSpace::default()),
+        "musicPath"
+    );
+    global_music_path_str.set_initializer(
+        &i8_type.const_array(
+            &music_path_str
+                .as_bytes()
+                .iter()
+                .map(|&b| i8_type.const_int(b as u64,false))
+                .collect::<Vec<IntValue>>(),
+            ),
+    );
+    global_music_path_str.set_constant(true);
+    global_music_path_str.set_linkage(iw::module::Linkage::Private);
 
     // add関数の定義と処理
     let add_func = module.add_function("add", add_func_type, None);
@@ -131,6 +155,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     //let add_res = builder.build_call(sub_func, add_args.as_slice(), "addTemp").unwrap().try_as_basic_value().left().unwrap();
     let add_res = i32_type.const_int(1919, false);
     unsafe {
+        // printf呼び出し
+        /*
         let format_str_ptr = builder
             .build_in_bounds_gep(
                 global_format_str.as_pointer_value(),
@@ -145,7 +171,25 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             .try_as_basic_value()
             .left()
             .unwrap();
-        builder.build_return(Some(&printf_res))?;
+        */ 
+        // 自作ライブラリに含まれる関数呼び出し
+        let music_path_str_ptr = builder
+            .build_in_bounds_gep(
+                global_music_path_str.as_pointer_value(),
+                &[i32_type.const_int(0,false),i32_type.const_int(0,false)],
+                "musicPathStrPtr",
+                )
+                .unwrap();
+        let music_play_args = &[music_path_str_ptr.into()];
+        let music_play_res = builder
+            .build_call(music_play_func,music_play_args.as_slice(),"music_play_Temp")
+            .unwrap()
+            .try_as_basic_value()
+            .left()
+            .unwrap();
+
+
+        builder.build_return(Some(&music_play_res))?;
     }
 
     module.print_to_stderr();
